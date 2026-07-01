@@ -29,22 +29,12 @@ const el = (tag, props = {}, children = []) => {
   return node;
 };
 
-const statusEl = $('[data-status]');
-function setStatus(text, isError = false) {
-  statusEl.textContent = text;
-  statusEl.style.color = isError ? 'var(--danger)' : '';
-  statusEl.style.borderColor = isError ? 'var(--danger)' : '';
-}
-
-// Run a persistence action; on failure show the error and resync from server.
-async function persist(action, pending = 'Saving…') {
-  setStatus(pending);
+// Run a persistence action; on failure log the error and resync from server.
+async function persist(action) {
   try {
     await action();
-    setStatus('Synced');
   } catch (err) {
     console.error(err);
-    setStatus(err.message || 'Sync failed', true);
     await reload().catch(() => {});
   }
 }
@@ -374,17 +364,13 @@ async function reload() {
 (async function boot() {
   render();
   if (!DB.configured) {
-    setStatus('Supabase not configured', true);
     els.cardsEmpty.textContent = 'Copy config.example.js to config.js and add your Supabase credentials, then reload.';
     els.cardsEmpty.hidden = false;
     return;
   }
-  setStatus('Loading…');
   try {
     await reload();
-    setStatus('Synced');
   } catch (err) {
     console.error(err);
-    setStatus(err.message || 'Load failed', true);
   }
 })();
