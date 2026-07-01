@@ -1,2 +1,5 @@
 # Local Supabase credentials — never commit
 prototype/config.js
+
+# Local-only theme experiments, not part of the shipped prototype
+styling-playground/

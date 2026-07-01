@@ -63,12 +63,13 @@ ordered by priority; each has a required action.
 
 ## P3 — Housekeeping
 
-7. **Untracked `styling-playground/` directory.**
-   Sitting in the working tree unversioned (`git status` shows `??`).
-   Unclear if it's an in-progress theme experiment or scratch work.
-   **Action:** either commit it, move it out of the repo, or add it to
-   `.gitignore` — resolve before it's lost or accidentally swept into an
-   unrelated commit.
+7. ~~**Untracked `styling-playground/` directory.**~~ **Fixed.**
+   Was sitting in the working tree unversioned (`git status` showed `??`) —
+   an in-progress theme experiment (`index.html` +
+   `theme-mint/paper/slate.html`). Resolved per user decision: added
+   `styling-playground/` to `.gitignore` so it stays local-only scratch work
+   and no longer shows as untracked or risks being swept into an unrelated
+   commit.
 
 8. **No automated tests.**
    `app.js`/`db.js` contain real logic worth protecting (attachment
