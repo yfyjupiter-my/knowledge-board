@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Knowledge Board — Wireframe</title>
+</head>
+<body>
+  <!--
+    WIREFRAME ONLY — structure and content blocks, no styling.
+    Bordered/placeholder blocks are represented with [ ... ] labels.
+    Screens/states included:
+      1. Main board layout (topic sidebar + ordered card flow)
+      2. Add / edit card (modal state)
+      3. Add topic (inline)
+      4. Empty states
+  -->
+
+  <header>
+    <h1>Knowledge Board</h1>
+    <p>[ Personal knowledge board — ordered cards grouped by topic ]</p>
+    <nav aria-label="Global">
+      <ul>
+        <li>[ Search topics &amp; cards (input) ]</li>
+        <li>[ Sync/connection status indicator ]</li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============================================================= -->
+    <!-- SCREEN 1: MAIN BOARD                                          -->
+    <!-- ============================================================= -->
+
+    <!-- Left region: topics sidebar -->
+    <aside aria-label="Topics sidebar">
+      <h2>Topics</h2>
+
+      <nav aria-label="Topic list">
+        <ul>
+          <li>
+            <a href="#topic-1" aria-current="true">Topic A (selected)</a>
+            <button type="button">Rename</button>
+            <button type="button">Delete</button>
+          </li>
+          <li>
+            <a href="#topic-2">Topic B</a>
+            <button type="button">Rename</button>
+            <button type="button">Delete</button>
+          </li>
+          <li>
+            <a href="#topic-3">Topic C</a>
+            <button type="button">Rename</button>
+            <button type="button">Delete</button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Add topic (inline) -->
+      <form aria-label="Add topic">
+        <label for="new-topic-name">New topic name</label>
+        <input id="new-topic-name" name="new-topic-name" type="text">
+        <button type="submit">Add topic</button>
+      </form>
+
+      <!-- Empty state (shown when no topics exist) -->
+      <p hidden>[ Empty state: "No topics yet — create one to begin." ]</p>
+    </aside>
+
+    <!-- Right region: selected topic's ordered card flow -->
+    <section aria-labelledby="current-topic-heading">
+      <header>
+        <h2 id="current-topic-heading">Topic A</h2>
+        <p>[ Cards shown in sort order, top to bottom = learning/process flow ]</p>
+        <button type="button">Add card</button>
+      </header>
+
+      <!-- Ordered list = the linear sequence for this topic -->
+      <ol aria-label="Cards in order">
+        <li>
+          <article aria-label="Card 1">
+            <p>[ Drag handle — reorder ]</p>
+            <p>[ Step number: 1 ]</p>
+            <h3>Card title</h3>
+            <p>[ Notes preview (truncated free text) ]</p>
+            <p>[ Attachment indicators: 2 links, 1 file ]</p>
+            <button type="button">Edit</button>
+            <button type="button">Delete</button>
+          </article>
+          <p aria-hidden="true">[ connector / arrow to next step ]</p>
+        </li>
+
+        <li>
+          <article aria-label="Card 2">
+            <p>[ Drag handle — reorder ]</p>
+            <p>[ Step number: 2 ]</p>
+            <h3>Card title</h3>
+            <p>[ Notes preview (truncated free text) ]</p>
+            <p>[ Attachment indicators: none ]</p>
+            <button type="button">Edit</button>
+            <button type="button">Delete</button>
+          </article>
+          <p aria-hidden="true">[ connector / arrow to next step ]</p>
+        </li>
+
+        <li>
+          <article aria-label="Card 3">
+            <p>[ Drag handle — reorder ]</p>
+            <p>[ Step number: 3 ]</p>
+            <h3>Card title</h3>
+            <p>[ Notes preview (truncated free text) ]</p>
+            <p>[ Attachment indicators: 1 link ]</p>
+            <button type="button">Edit</button>
+            <button type="button">Delete</button>
+          </article>
+        </li>
+      </ol>
+
+      <!-- Empty state (shown when topic has no cards) -->
+      <p hidden>[ Empty state: "No cards in this topic yet — add your first." ]</p>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- SCREEN 2: ADD / EDIT CARD (modal/dialog state)                -->
+    <!-- ============================================================= -->
+    <dialog aria-label="Edit card" open>
+      <h2>Edit card</h2>
+
+      <form>
+        <p>
+          <label for="card-title">Title (required)</label>
+          <input id="card-title" name="card-title" type="text" required>
+        </p>
+
+        <p>
+          <label for="card-notes">Notes (optional)</label>
+          <textarea id="card-notes" name="card-notes"></textarea>
+        </p>
+
+        <!-- Attachments: links -->
+        <fieldset>
+          <legend>Link attachments</legend>
+          <ul>
+            <li>
+              [ Existing link: url + label ]
+              <button type="button">Open</button>
+              <button type="button">Remove</button>
+            </li>
+          </ul>
+          <p>
+            <label for="link-url">Link URL</label>
+            <input id="link-url" name="link-url" type="url">
+            <label for="link-label">Label (optional)</label>
+            <input id="link-label" name="link-label" type="text">
+            <button type="button">Add link</button>
+          </p>
+        </fieldset>
+
+        <!-- Attachments: files -->
+        <fieldset>
+          <legend>File attachments</legend>
+          <ul>
+            <li>
+              [ Existing file: name/preview ]
+              <button type="button">Open</button>
+              <button type="button">Remove</button>
+            </li>
+          </ul>
+          <p>
+            <label for="file-upload">Attach file</label>
+            <input id="file-upload" name="file-upload" type="file">
+            <button type="button">Upload</button>
+          </p>
+        </fieldset>
+
+        <p>
+          <button type="submit">Save</button>
+          <button type="button">Cancel</button>
+          <button type="button">Delete card</button>
+        </p>
+      </form>
+    </dialog>
+
+    <!-- ============================================================= -->
+    <!-- CONFIRMATION (delete topic/card) — dialog state              -->
+    <!-- ============================================================= -->
+    <dialog aria-label="Confirm delete" open>
+      <h2>Delete?</h2>
+      <p>[ "This will delete the topic and all its cards." / "Delete this card?" ]</p>
+      <p>
+        <button type="button">Confirm delete</button>
+        <button type="button">Cancel</button>
+      </p>
+    </dialog>
+  </main>
+
+  <footer>
+    <p>[ Data persisted to Supabase — footer/status area ]</p>
+  </footer>
+</body>
+</html>
