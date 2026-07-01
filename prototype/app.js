@@ -21,15 +21,7 @@ const store = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-// Only http(s) links are ever rendered as clickable — blocks javascript:
-// and other schemes from executing if stored (e.g. via direct DB edits).
-function isSafeUrl(url) {
-  try {
-    return ['http:', 'https:'].includes(new URL(url).protocol);
-  } catch {
-    return false;
-  }
-}
+// isSafeUrl, reorderArray: see logic.js (loaded before this file).
 
 const el = (tag, props = {}, children = []) => {
   const node = Object.assign(document.createElement(tag), props);
@@ -174,8 +166,7 @@ function wireDrag(cardEl, topic) {
     const toIndex = Number(cardEl.dataset.index);
     if (dragFromIndex === null || dragFromIndex === toIndex) return;
 
-    const [moved] = topic.cards.splice(dragFromIndex, 1);
-    topic.cards.splice(toIndex, 0, moved);
+    topic.cards = reorderArray(topic.cards, dragFromIndex, toIndex);
     render();
     persist(() => DB.updateCardOrder(topic.cards.map(c => c.id)));
   });

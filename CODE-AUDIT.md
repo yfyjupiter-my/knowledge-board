@@ -71,13 +71,30 @@ ordered by priority; each has a required action.
    and no longer shows as untracked or risks being swept into an unrelated
    commit.
 
-8. **No automated tests.**
-   `app.js`/`db.js` contain real logic worth protecting (attachment
+8. ~~**No automated tests.**~~ **Fixed.**
+   `app.js`/`db.js` contained real logic worth protecting (attachment
    merge/replace, sort-order reindexing, board reconstruction from flat
-   Supabase rows in `loadBoard()`). None of it is covered.
-   **Action:** if this prototype moves past personal use, add at least unit
-   coverage for `DB.loadBoard()`'s row→tree reconstruction and the
-   drag-reorder index math — the two places with the most non-obvious logic.
+   Supabase rows in `loadBoard()`) with none of it covered.
+   Resolved per user decision to add coverage now rather than defer. Since
+   `app.js`/`db.js` are plain `<script>`-loaded files with DOM/Supabase
+   wiring that runs at load time (not requireable from Node as-is), the two
+   flagged pieces of non-obvious logic were extracted into pure,
+   framework-free functions:
+   - `buildBoard()` (db.js) — the row→tree reconstruction, factored out of
+     `DB.loadBoard()` and called from it.
+   - `reorderArray()` and `isSafeUrl()` — moved into a new `prototype/logic.js`
+     (loaded via `<script>` before `app.js` in `index.html`), since `app.js`
+     itself can't be safely `require()`d in Node.
+   Both files gain a `if (typeof module !== 'undefined') module.exports = ...`
+   guard so they work unchanged as browser `<script>` tags and as Node
+   `require()`s. Tests use Node's built-in `node:test` runner (no new
+   dependency, no build step): `prototype/db.test.js` (6 cases covering
+   nesting, ordering, null-notes defaulting, link/file splitting, label
+   fallbacks, orphaned attachments) and `prototype/logic.test.js` (7 cases
+   covering `isSafeUrl` scheme allow/deny + malformed input, and
+   `reorderArray` forward/backward/no-op/non-mutation). Run via
+   `cd prototype && npm test` (added `prototype/package.json` with a `test`
+   script wrapping `node --test`). All 13 pass.
 
 ## Acknowledged, no action needed
 

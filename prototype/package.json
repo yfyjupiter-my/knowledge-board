@@ -1,0 +1,7 @@
+{
+  "name": "knowledge-board-prototype",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -6,7 +6,34 @@
 
 'use strict';
 
-const DB = (() => {
+// Turn flat topics/cards/attachments rows into the nested tree app.js
+// renders. Pure and DB-client-free so it can be unit tested directly —
+// see db.test.js.
+function buildBoard(topics, cards, attachments, publicUrl) {
+  const byCard = new Map();
+  for (const a of attachments) {
+    if (!byCard.has(a.card_id)) byCard.set(a.card_id, { links: [], files: [] });
+    const bucketed = byCard.get(a.card_id);
+    if (a.type === 'link') {
+      bucketed.links.push({ id: a.id, url: a.url_or_path, label: a.label || '' });
+    } else {
+      bucketed.files.push({ id: a.id, path: a.url_or_path, name: a.label || 'file', url: publicUrl(a.url_or_path) });
+    }
+  }
+
+  const cardsByTopic = new Map();
+  for (const c of cards) {
+    const att = byCard.get(c.id) || { links: [], files: [] };
+    const card = { id: c.id, title: c.title, notes: c.notes || '', links: att.links, files: att.files };
+    if (!cardsByTopic.has(c.topic_id)) cardsByTopic.set(c.topic_id, []);
+    cardsByTopic.get(c.topic_id).push(card);
+  }
+
+  return topics.map(t => ({ id: t.id, name: t.name, cards: cardsByTopic.get(t.id) || [] }));
+}
+
+// Guarded for Node (db.test.js), where there is no `window` global.
+const DB = typeof window === 'undefined' ? null : (() => {
   const cfg = window.SUPABASE_CONFIG;
   const configured =
     cfg && cfg.url && cfg.anonKey &&
@@ -46,26 +73,7 @@ const DB = (() => {
         .from('card_attachments').select('*').order('created_at');
       if (aErr) throw aErr;
 
-      const byCard = new Map();
-      for (const a of attachments) {
-        if (!byCard.has(a.card_id)) byCard.set(a.card_id, { links: [], files: [] });
-        const bucketed = byCard.get(a.card_id);
-        if (a.type === 'link') {
-          bucketed.links.push({ id: a.id, url: a.url_or_path, label: a.label || '' });
-        } else {
-          bucketed.files.push({ id: a.id, path: a.url_or_path, name: a.label || 'file', url: publicUrl(a.url_or_path) });
-        }
-      }
-
-      const cardsByTopic = new Map();
-      for (const c of cards) {
-        const att = byCard.get(c.id) || { links: [], files: [] };
-        const card = { id: c.id, title: c.title, notes: c.notes || '', links: att.links, files: att.files };
-        if (!cardsByTopic.has(c.topic_id)) cardsByTopic.set(c.topic_id, []);
-        cardsByTopic.get(c.topic_id).push(card);
-      }
-
-      return topics.map(t => ({ id: t.id, name: t.name, cards: cardsByTopic.get(t.id) || [] }));
+      return buildBoard(topics, cards, attachments, publicUrl);
     },
 
     // ------------------------------------------------------- topics -------
@@ -149,3 +157,7 @@ const DB = (() => {
     },
   };
 })();
+
+// Node-only export for db.test.js. Browsers load this file via a plain
+// <script> tag, where `module` is undefined and this block is a no-op.
+if (typeof module !== 'undefined') module.exports = { buildBoard };
