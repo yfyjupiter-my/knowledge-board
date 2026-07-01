@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildBoard } = require('./db.js');
+const { buildBoard, sanitizeFileName } = require('./db.js');
 
 const publicUrl = (path) => `https://cdn.example/${path}`;
 
@@ -69,4 +69,20 @@ test('buildBoard ignores attachments belonging to a card that no longer exists',
   ];
   const board = buildBoard(topics, cards, attachments, publicUrl);
   assert.deepEqual(board[0].cards[0].links, []);
+});
+
+test('sanitizeFileName strips directory segments from path-separated names', () => {
+  assert.equal(sanitizeFileName('../../etc/passwd'), 'passwd');
+  assert.equal(sanitizeFileName('a/b/c.png'), 'c.png');
+  assert.equal(sanitizeFileName('a\\b\\c.png'), 'c.png');
+});
+
+test('sanitizeFileName replaces unsafe and control characters', () => {
+  assert.equal(sanitizeFileName('report\x00.txt'), 'report_.txt');
+  assert.equal(sanitizeFileName('my file (final)?.docx'), 'my_file__final__.docx');
+});
+
+test('sanitizeFileName neutralizes a bare traversal segment and falls back for empty input', () => {
+  assert.equal(sanitizeFileName('..'), '_');
+  assert.equal(sanitizeFileName(''), 'file');
 });

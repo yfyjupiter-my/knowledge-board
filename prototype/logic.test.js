@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isSafeUrl, reorderArray } = require('./logic.js');
+const { isSafeUrl, reorderArray, validateFile, MAX_FILE_SIZE_BYTES } = require('./logic.js');
 
 test('isSafeUrl accepts http and https', () => {
   assert.equal(isSafeUrl('http://example.com'), true);
@@ -36,4 +36,29 @@ test('reorderArray does not mutate the input array', () => {
 
 test('reorderArray is a no-op when from and to are the same index', () => {
   assert.deepEqual(reorderArray(['a', 'b', 'c'], 1, 1), ['a', 'b', 'c']);
+});
+
+test('validateFile accepts an allowed type within the size limit', () => {
+  const file = { type: 'image/png', size: 1024 };
+  assert.deepEqual(validateFile(file), { ok: true });
+});
+
+test('validateFile rejects a disallowed MIME type', () => {
+  const file = { type: 'application/x-msdownload', size: 1024 };
+  const result = validateFile(file);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /Unsupported file type/);
+});
+
+test('validateFile rejects a file over the size limit', () => {
+  const file = { type: 'image/png', size: MAX_FILE_SIZE_BYTES + 1 };
+  const result = validateFile(file);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /too large/);
+});
+
+test('validateFile rejects when no file is given', () => {
+  const result = validateFile(null);
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /No file selected/);
 });

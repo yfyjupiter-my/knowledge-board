@@ -4,6 +4,12 @@
 -- NOTE: with the anon key shipped client-side, anyone with the key has full
 -- access. That is acceptable for a private personal board; add Supabase Auth
 -- and tighten the policies to `auth.uid()` if this ever becomes multi-user.
+--
+-- ACCEPTED RISK (reviewed 2026-07-01): scope confirmed single-user/personal.
+-- Permissive `using (true)` policies and the public `card-files` bucket are
+-- an accepted risk for as long as this stays single-user. Revisit this
+-- decision — and add Supabase Auth scoped to `auth.uid()` — the moment the
+-- board is shared with more than one person.
 
 -- ---------------------------------------------------------------- tables ---
 
@@ -81,10 +87,26 @@ create policy cards_all       on public.cards            for all using (true) wi
 create policy attachments_all on public.card_attachments for all using (true) with check (true);
 
 -- ----------------------------------------------------------------- storage -
--- Create a public bucket for card file attachments.
-insert into storage.buckets (id, name, public)
-values ('card-files', 'card-files', true)
-on conflict (id) do nothing;
+-- Create a public bucket for card file attachments. Size/type limits mirror
+-- MAX_FILE_SIZE_BYTES / ALLOWED_FILE_TYPES in prototype/logic.js — the
+-- client-side check is UX, this is the enforced boundary.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'card-files', 'card-files', true, 10485760,
+  array[
+    'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml',
+    'application/pdf',
+    'text/plain', 'text/markdown', 'text/csv',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/zip'
+  ]
+)
+on conflict (id) do update set
+  file_size_limit     = excluded.file_size_limit,
+  allowed_mime_types   = excluded.allowed_mime_types;
 
 -- Allow anon full access to the bucket (single-user).
 drop policy if exists card_files_all on storage.objects;

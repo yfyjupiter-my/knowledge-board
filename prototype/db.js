@@ -32,6 +32,15 @@ function buildBoard(topics, cards, attachments, publicUrl) {
   return topics.map(t => ({ id: t.id, name: t.name, cards: cardsByTopic.get(t.id) || [] }));
 }
 
+// Strip path separators, traversal segments, and control/unsafe characters
+// from a user-supplied file name before it becomes part of a storage object
+// path. Keeps the storage key confined to a flat, single-segment name.
+function sanitizeFileName(name) {
+  const base = String(name).split(/[\\/]/).pop() || 'file';
+  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^\.+/, '_');
+  return cleaned || 'file';
+}
+
 // Guarded for Node (db.test.js), where there is no `window` global.
 const DB = typeof window === 'undefined' ? null : (() => {
   const cfg = window.SUPABASE_CONFIG;
@@ -150,7 +159,7 @@ const DB = typeof window === 'undefined' ? null : (() => {
     async uploadFile(file) {
       // Prefix with a counter-free unique-ish path. crypto.randomUUID keeps
       // names collision-safe without Math.random.
-      const path = `${crypto.randomUUID()}-${file.name}`;
+      const path = `${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
       const { error } = await client.storage.from(bucket).upload(path, file);
       if (error) throw error;
       return { path, name: file.name, url: publicUrl(path) };
@@ -160,4 +169,4 @@ const DB = typeof window === 'undefined' ? null : (() => {
 
 // Node-only export for db.test.js. Browsers load this file via a plain
 // <script> tag, where `module` is undefined and this block is a no-op.
-if (typeof module !== 'undefined') module.exports = { buildBoard };
+if (typeof module !== 'undefined') module.exports = { buildBoard, sanitizeFileName };

@@ -21,7 +21,7 @@ const store = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-// isSafeUrl, reorderArray: see logic.js (loaded before this file).
+// isSafeUrl, reorderArray, validateFile: see logic.js (loaded before this file).
 
 const el = (tag, props = {}, children = []) => {
   const node = Object.assign(document.createElement(tag), props);
@@ -248,7 +248,7 @@ function renderAttachments() {
   linkList.replaceChildren(...draftLinks.map((link, i) => {
     const label = link.label || link.url;
     const a = isSafeUrl(link.url)
-      ? el('a', { href: link.url, target: '_blank', rel: 'noreferrer', textContent: label })
+      ? el('a', { href: link.url, target: '_blank', rel: 'noopener noreferrer', textContent: label })
       : document.createTextNode(label);
     const remove = el('button', { type: 'button', className: 'icon-btn icon-btn--danger', textContent: '✕',
       onclick: () => { draftLinks.splice(i, 1); renderAttachments(); } });
@@ -257,7 +257,7 @@ function renderAttachments() {
 
   fileList.replaceChildren(...draftFiles.map((file, i) => {
     const name = file.url && isSafeUrl(file.url)
-      ? el('a', { href: file.url, target: '_blank', rel: 'noreferrer', textContent: `📎 ${file.name}` })
+      ? el('a', { href: file.url, target: '_blank', rel: 'noopener noreferrer', textContent: `📎 ${file.name}` })
       : document.createTextNode(`📎 ${file.name}`);
     const remove = el('button', { type: 'button', className: 'icon-btn icon-btn--danger', textContent: '✕',
       onclick: () => { draftFiles.splice(i, 1); renderAttachments(); } });
@@ -282,6 +282,8 @@ $('[data-add-file]').addEventListener('click', async () => {
   const file = fileInput.files[0];
   if (!file) return;
   fileInput.value = '';
+  const validation = validateFile(file);
+  if (!validation.ok) { setStatus(validation.reason, true); return; }
   // Upload immediately so we hold a storage path for the draft. If the dialog
   // is cancelled the object is orphaned — acceptable for a personal tool.
   await persist(async () => {
