@@ -76,6 +76,15 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
   color: var(--text);
 }
 .search input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.status {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
 
 /* Layout */
 .layout {

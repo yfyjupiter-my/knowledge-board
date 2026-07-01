@@ -1,7 +1,8 @@
 // Knowledge Board — Supabase data layer.
 // Wraps the Supabase JS client. All functions are async and throw on error;
-// callers (app.js) surface failures via the status pill. The rest of the app
-// keeps a local cache and calls these for write-through persistence.
+// callers (app.js) surface failures via the navbar status pill and log to
+// console. The rest of the app keeps a local cache and calls these for
+// write-through persistence.
 
 'use strict';
 
@@ -106,12 +107,11 @@ const DB = (() => {
     },
 
     // Persist new order: write each card's sort_order to its array index.
+    // Runs as a single transaction via the reorder_cards RPC (schema.sql) so
+    // a mid-write failure can't leave sort_order partially applied.
     async updateCardOrder(orderedCardIds) {
-      await Promise.all(orderedCardIds.map((id, index) =>
-        client.from('cards').update({ sort_order: index }).eq('id', id).then(({ error }) => {
-          if (error) throw error;
-        })
-      ));
+      const { error } = await client.rpc('reorder_cards', { card_ids: orderedCardIds });
+      if (error) throw error;
     },
 
     // --------------------------------------------------- attachments ------

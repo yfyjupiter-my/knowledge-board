@@ -51,6 +51,19 @@ create trigger cards_set_updated_at
   before update on public.cards
   for each row execute function public.set_updated_at();
 
+-- ------------------------------------------------------- reorder cards RPC -
+-- Atomically write sort_order for a whole topic's cards in one transaction,
+-- so a mid-drag failure can't leave sort_order partially applied.
+create or replace function public.reorder_cards(card_ids uuid[])
+returns void language plpgsql as $$
+begin
+  update public.cards as c
+  set sort_order = ord.i - 1
+  from unnest(card_ids) with ordinality as ord(id, i)
+  where c.id = ord.id;
+end;
+$$;
+
 -- --------------------------------------------------------------------- RLS -
 
 alter table public.topics           enable row level security;

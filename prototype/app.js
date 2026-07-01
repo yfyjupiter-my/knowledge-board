@@ -21,6 +21,16 @@ const store = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+// Only http(s) links are ever rendered as clickable — blocks javascript:
+// and other schemes from executing if stored (e.g. via direct DB edits).
+function isSafeUrl(url) {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}
+
 const el = (tag, props = {}, children = []) => {
   const node = Object.assign(document.createElement(tag), props);
   for (const c of [].concat(children)) {
@@ -29,12 +39,22 @@ const el = (tag, props = {}, children = []) => {
   return node;
 };
 
-// Run a persistence action; on failure log the error and resync from server.
-async function persist(action) {
+const statusEl = $('[data-status]');
+function setStatus(text, isError = false) {
+  statusEl.textContent = text;
+  statusEl.style.color = isError ? 'var(--danger)' : '';
+  statusEl.style.borderColor = isError ? 'var(--danger)' : '';
+}
+
+// Run a persistence action; on failure show the error and resync from server.
+async function persist(action, pending = 'Saving…') {
+  setStatus(pending);
   try {
     await action();
+    setStatus('Synced');
   } catch (err) {
     console.error(err);
+    setStatus(err.message || 'Sync failed', true);
     await reload().catch(() => {});
   }
 }
@@ -117,7 +137,8 @@ function renderCard(topic, card, index) {
   if (card.files.length) meta.push(el('span', { className: 'chip', textContent: `📎 ${card.files.length} file${card.files.length > 1 ? 's' : ''}` }));
   if (meta.length) children.push(el('div', { className: 'card__meta' }, meta));
 
-  const cardEl = el('article', { className: 'card', draggable: true }, children);
+  const searchActive = $('#search').value.trim().length > 0;
+  const cardEl = el('article', { className: 'card', draggable: !searchActive }, children);
   cardEl.dataset.index = String(index);
   wireDrag(cardEl, topic);
 
@@ -235,14 +256,16 @@ function openCardDialog(card) {
 function renderAttachments() {
   linkList.replaceChildren(...draftLinks.map((link, i) => {
     const label = link.label || link.url;
-    const a = el('a', { href: link.url, target: '_blank', rel: 'noreferrer', textContent: label });
+    const a = isSafeUrl(link.url)
+      ? el('a', { href: link.url, target: '_blank', rel: 'noreferrer', textContent: label })
+      : document.createTextNode(label);
     const remove = el('button', { type: 'button', className: 'icon-btn icon-btn--danger', textContent: '✕',
       onclick: () => { draftLinks.splice(i, 1); renderAttachments(); } });
     return el('li', { className: 'attach-item' }, [el('span', {}, [a]), remove]);
   }));
 
   fileList.replaceChildren(...draftFiles.map((file, i) => {
-    const name = file.url
+    const name = file.url && isSafeUrl(file.url)
       ? el('a', { href: file.url, target: '_blank', rel: 'noreferrer', textContent: `📎 ${file.name}` })
       : document.createTextNode(`📎 ${file.name}`);
     const remove = el('button', { type: 'button', className: 'icon-btn icon-btn--danger', textContent: '✕',
@@ -256,6 +279,7 @@ $('[data-add-link]').addEventListener('click', () => {
   const labelInput = $('[data-link-label]');
   const url = urlInput.value.trim();
   if (!url) return;
+  if (!isSafeUrl(url)) { setStatus('Only http(s) links are allowed', true); return; }
   draftLinks.push({ url, label: labelInput.value.trim() });
   urlInput.value = '';
   labelInput.value = '';
@@ -350,6 +374,10 @@ $('#search').addEventListener('input', (e) => {
     if (!q) { item.hidden = false; return; }
     item.hidden = !item.textContent.toLowerCase().includes(q);
   });
+  // Drag reorder relies on dataset.index matching topic.cards positions;
+  // a search filter hides cards without re-indexing, so dragging while
+  // filtered can reorder the wrong pair. Disable drag until cleared.
+  $$('.card').forEach((card) => { card.draggable = !q; });
 });
 
 /* ------------------------------------------------------------- boot ------ */
@@ -364,13 +392,17 @@ async function reload() {
 (async function boot() {
   render();
   if (!DB.configured) {
+    setStatus('Supabase not configured', true);
     els.cardsEmpty.textContent = 'Copy config.example.js to config.js and add your Supabase credentials, then reload.';
     els.cardsEmpty.hidden = false;
     return;
   }
+  setStatus('Loading…');
   try {
     await reload();
+    setStatus('Synced');
   } catch (err) {
     console.error(err);
+    setStatus(err.message || 'Load failed', true);
   }
 })();
