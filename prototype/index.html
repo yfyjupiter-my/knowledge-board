@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knowledge Board — Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__brand">
+      <h1>Knowledge Board</h1>
+      <p class="muted">Ordered cards grouped by topic</p>
+    </div>
+    <div class="app-header__tools">
+      <label class="search">
+        <span class="visually-hidden">Search topics &amp; cards</span>
+        <input id="search" type="search" placeholder="Search…">
+      </label>
+      <span class="status" data-status>In-memory prototype</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Topics sidebar -->
+    <aside class="sidebar" aria-label="Topics sidebar">
+      <div class="sidebar__head">
+        <h2>Topics</h2>
+      </div>
+
+      <nav aria-label="Topic list">
+        <ul class="topic-list" data-topic-list></ul>
+        <p class="empty" data-topics-empty hidden>No topics yet — create one to begin.</p>
+      </nav>
+
+      <form class="add-topic" data-add-topic>
+        <label class="visually-hidden" for="new-topic-name">New topic name</label>
+        <input id="new-topic-name" name="new-topic-name" type="text" placeholder="New topic…" autocomplete="off">
+        <button type="submit">Add</button>
+      </form>
+    </aside>
+
+    <!-- Selected topic's ordered card flow -->
+    <section class="content" aria-labelledby="current-topic-heading" data-content>
+      <header class="content__head">
+        <h2 id="current-topic-heading" data-current-topic>—</h2>
+        <button type="button" data-add-card>+ Add card</button>
+      </header>
+      <p class="muted content__hint">Cards run top to bottom = your learning / process flow. Drag to reorder.</p>
+
+      <ol class="card-flow" data-card-flow aria-label="Cards in order"></ol>
+      <p class="empty" data-cards-empty hidden>No cards in this topic yet — add your first.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p class="muted">Prototype — data lives in memory and resets on reload.</p>
+  </footer>
+
+  <!-- Add / edit card dialog -->
+  <dialog class="dialog" data-card-dialog>
+    <form method="dialog" data-card-form>
+      <h2 data-card-dialog-title>Add card</h2>
+
+      <label class="field">
+        <span>Title <em>(required)</em></span>
+        <input name="title" type="text" required autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span>Notes <em>(optional)</em></span>
+        <textarea name="notes" rows="4"></textarea>
+      </label>
+
+      <fieldset class="field">
+        <legend>Link attachments</legend>
+        <ul class="attach-list" data-link-list></ul>
+        <div class="attach-add">
+          <input type="url" data-link-url placeholder="https://…">
+          <input type="text" data-link-label placeholder="Label (optional)">
+          <button type="button" data-add-link>Add link</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend>File attachments</legend>
+        <ul class="attach-list" data-file-list></ul>
+        <div class="attach-add">
+          <input type="file" data-file-input>
+          <button type="button" data-add-file>Attach</button>
+        </div>
+      </fieldset>
+
+      <menu class="dialog__actions">
+        <button type="button" value="cancel" data-card-cancel>Cancel</button>
+        <button type="submit" value="save" class="primary">Save</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Confirm dialog -->
+  <dialog class="dialog dialog--confirm" data-confirm-dialog>
+    <form method="dialog">
+      <h2 data-confirm-title>Delete?</h2>
+      <p data-confirm-message>Are you sure?</p>
+      <menu class="dialog__actions">
+        <button type="button" value="cancel" data-confirm-cancel>Cancel</button>
+        <button type="button" value="confirm" class="danger" data-confirm-ok>Delete</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
